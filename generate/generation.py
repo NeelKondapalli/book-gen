@@ -1,72 +1,185 @@
-import os
-from datetime import datetime
-import chromadb
-from tqdm import tqdm
-from ollama import chat
-from ollama import ChatResponse
-from .prompts import STRUCTURE_PROMPT, CONTEXT_PROMPT, GENERATE_PROMPT 
-from lib.utils import convert_rag_to_string
-class Generator:
-    def __init__(self, user_prompt, collection_name):
-        self.client = chromadb.PersistentClient()
-        
-        self.collection = self.client.get_collection(name=collection_name)
-       
-        self.user_prompt = user_prompt
+"""
+This module provides functionality for generating AI responses using ChromaDB vector storage
+and the DeepSeek-R1 8B model through Ollama. It handles context retrieval, response structuring,
+and report generation based on user prompts.
+"""
 
+import os
+import chromadb
+from ollama import chat
+from datetime import datetime
+from lib.utils import convert_rag_to_string, write_to_file
+from .prompts import STRUCTURE_PROMPT, CONTEXT_PROMPT, GENERATE_PROMPT 
+
+
+
+class Generator:
+    """
+    A class to handle AI response generation using ChromaDB and Ollama.
+
+    This class manages the process of retrieving relevant context from ChromaDB,
+    structuring responses, and generating comprehensive reports based on user prompts.
+
+    Attributes:
+        client (chromadb.PersistentClient): ChromaDB client instance
+        collection (chromadb.Collection): ChromaDB collection for context retrieval
+        user_prompt (str): The user's input prompt for generation
+    """
+
+    def __init__(self, user_prompt: str, collection_name: str) -> None:
+        """
+        Initialize the Generator with a prompt and collection name.
+
+        Args:
+            user_prompt: The prompt to generate content for
+            collection_name: Name of the ChromaDB collection to use
+        """
+        self.client = chromadb.PersistentClient()
+        self.collection = self.client.get_collection(name=collection_name)
+        self.user_prompt = user_prompt
+    
+    def get_even_context(self, results_per_file: int, query: str) -> str:
+        processed_files = self.collection.metadata["processed_files"].split("###")
+        all_contexts = []
+
+        for filename in processed_files:
+            file_context = self.collection.query(
+                query_texts=[query],
+                n_results=results_per_file,
+                where={"source_file": filename.strip()}, 
+                include=["documents", "metadatas"]
+            )
+            all_contexts.append(file_context)
+        
+        combined_context = {
+            "ids": [sum([chunk["ids"][0] for chunk in all_contexts], [])],
+            "documents": [sum([chunk["documents"][0] for chunk in all_contexts], [])]
+        }
+        
+        context_string = convert_rag_to_string(combined_context)
+
+        return context_string
+    
 
     def generate(self) -> str:
+        """
+        Executes the steps to process the user's prompt and generate the final report,
+        ensuring equal context from each source document.
+        """
 
-        user_context = self.collection.query(
-            query_texts=[self.user_prompt],
-            n_results=20,
-            include=["documents"]
-        )
-        user_context_string = convert_rag_to_string(user_context)
+        processed_files = " ".join(self.collection.metadata["processed_files"].split("###"))
+        
+        context_string = self.get_even_context(2, self.user_prompt)
 
-        structure = self.generate_template_response(user_context_string) # overview of essay w/ some context
-        context_response = self.generate_context_response(structure)
+        structure = self.generate_template_response(context_string, processed_files) # overview of essay w/ some context
+        
+        context_response = self.generate_context_response(structure, processed_files)
 
-        new_context = self.collection.query(
-            query_texts=[context_response],
-            n_results=20,
-            include=["documents"]
-        )
+        marker = "</think>"
+        index = context_response.find(marker)
+        if index != -1:
+            context_response = context_response[index + len(marker):]
 
-        new_context_string = convert_rag_to_string(new_context)
+        more_context_string = self.get_even_context(1, context_response)
 
-        report = self.generate_report(structure, user_context_string, new_context_string)
+        report = self.generate_report(structure, context_response, context_string, more_context_string, processed_files)
 
         marker = "</think>"
         index = report.find(marker)
         if index != -1:
             report = report[index + len(marker):]
         
-        self.write_to_file(report)
+        write_to_file(report)
+    
+    def generate_template_response(self, user_context: str, files: str) -> str:
+        """
+        Generates a structural template/outline for the report.
 
-    def write_to_file(self, report):
-        os.makedirs("reports", exist_ok=True)
+        Args:
+            user_context (str): The context retrieved from the user's prompt
 
-        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{current_time}.txt"
+        Returns:
+            str: A structured outline for the report
 
-        file_path = os.path.join("reports", filename)
+        Note:
+            Uses the DeepSeek-R1 8B model with a specific structure prompt
+        """
+        structure_prompt = STRUCTURE_PROMPT.replace("{USER_PROMPT}", self.user_prompt.strip())
+        structure_prompt = structure_prompt.replace("{USER_CONTEXT}", user_context)
+        structure_prompt = structure_prompt.replace("{FILENAMES}", files)
 
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(report)
+        stream = chat(
+            model='deepseek-r1:8b',
+            messages=[{'role': 'user', 'content': structure_prompt}],
+            stream=True,
+        )
+        response = ""
 
-        print(f"Report saved to: {file_path}")
+        for chunk in stream:
+            response += chunk['message']['content']
+            print(chunk['message']['content'], end='', flush=True)
+        print("\n\n\n")
+        
+    
+        return response
+
+
+    def generate_context_response(self, structure: str, files: str) -> str:
+        """
+        Generates additional context based on the report structure.
+
+        Args:
+            structure (str): The outline/structure of the report
+
+        Returns:
+            str: Additional context for report generation
+
+        Note:
+            Uses the DeepSeek-R1 8B model to expand on the structural outline
+        """
+        context_prompt = CONTEXT_PROMPT.replace("{OUTLINE_TEXT}", structure)
+        context_prompt = context_prompt.replace("{USER_PROMPT}", self.user_prompt.strip())
+        context_prompt = context_prompt.replace("{FILENAMES}", files)
+
+        stream = chat(
+            model='deepseek-r1:8b',
+            messages=[{'role': 'user', 'content': context_prompt}],
+            stream=True,
+        )
+
+        response = ""
+
+        for chunk in stream:
+            response += chunk['message']['content']
+            print(chunk['message']['content'], end='', flush=True)
+        print("\n\n\n")
+        
+
+        return response
 
     
 
-        
+    def generate_report(self, structure: str, context_response: str, user_context: str, more_context: str, files: str) -> str:
+        """
+        Generates the final report using the collected context and structure.
 
+        Args:
+            structure (str): The outline/structure for the report
+            user_context (str): Initial context based on user prompt
+            more_context (str): Additional context retrieved based on structure
 
-    def generate_report(self, structure: str, user_context: str, more_context: str) -> str:
-        temp_prompt1 = GENERATE_PROMPT.replace("{USER_PROMPT}", self.user_prompt)
-        temp_prompt2 = temp_prompt1.replace("{STRUCTURE}", structure)
-        temp_prompt3 = temp_prompt2.replace("{USER_CONTEXT}", user_context)
-        final_prompt = temp_prompt3.replace("{MORE_CONTEXT}", more_context)
+        Returns:
+            str: The complete generated report
+
+        Note:
+            Uses the DeepSeek-R1 8B model for generation with streaming output
+        """
+        final_prompt = GENERATE_PROMPT.replace("{USER_PROMPT}", self.user_prompt)
+        final_prompt = final_prompt.replace("{STRUCTURE}", structure)
+        final_prompt = final_prompt.replace("{USER_CONTEXT}", user_context)
+        final_prompt = final_prompt.replace("{CONTEXT_RESPONSE}", context_response)
+        final_prompt = final_prompt.replace("{MORE_CONTEXT}", more_context)
+        final_prompt = final_prompt.replace("{FILENAMES}", files)
 
         stream = chat(
             model='deepseek-r1:8b',
@@ -86,49 +199,4 @@ class Generator:
         return response
 
 
-    
 
-
-
-    def generate_template_response(self, user_context):
-
-        temp_prompt = STRUCTURE_PROMPT.replace("{USER_PROMPT}", self.user_prompt.strip())
-        structure_prompt = temp_prompt.replace("{USER_CONTEXT}", user_context)
-
-        stream = chat(
-            model='deepseek-r1:8b',
-            messages=[{'role': 'user', 'content': structure_prompt}],
-            stream=True,
-        )
-        response = ""
-
-        for chunk in stream:
-            response += chunk['message']['content']
-            print(chunk['message']['content'], end='', flush=True)
-        print("\n\n\n")
-        
-    
-        return response
-
-    def generate_context_response(self, structure):
-        context_prompt = CONTEXT_PROMPT.replace("{OUTLINE_TEXT}", structure)
-
-        stream = chat(
-            model='deepseek-r1:8b',
-            messages=[{'role': 'user', 'content': context_prompt}],
-            stream=True,
-        )
-
-        response = ""
-
-        for chunk in stream:
-            response += chunk['message']['content']
-            print(chunk['message']['content'], end='', flush=True)
-        print("\n\n\n")
-        
-
-        return response
-    
-    
-
-    

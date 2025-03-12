@@ -5,7 +5,6 @@ import chromadb
 
 def ingest(dir_path, name):
     directory_ingestor = Ingestor(dir_path, name)
-    print(f"\n\nIngesting documents in: {dir_path} and name {name}\n\n")
     directory_ingestor.process_directory()
 
 
@@ -23,9 +22,7 @@ def test_query(name, query):
         include = ["documents"]
     )
 
-    print("\n\n")
-    print(results)
-    print("\n\n")
+    print("\n\n" + results + "\n\n")
 
 def generate(prompt, name):
     client = chromadb.PersistentClient()
