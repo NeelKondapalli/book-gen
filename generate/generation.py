@@ -69,10 +69,10 @@ class Generator:
 
         processed_files = " ".join(self.collection.metadata["processed_files"].split("###"))
         
-        context_string = self.get_even_context(2, self.user_prompt)
+        context_string = self.get_even_context(1, self.user_prompt)
 
         structure = self.generate_template_response(context_string, processed_files) # overview of essay w/ some context
-        
+
         context_response = self.generate_context_response(structure, processed_files)
 
         marker = "</think>"

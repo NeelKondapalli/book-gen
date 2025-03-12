@@ -4,7 +4,7 @@ Do NOT write the full essay. Instead, produce a structured plan that includes:
 
 The documents you will be analyzing are {FILENAMES}
 
-USE ONLY THOSE DOCUMENTS
+USE ALL and ONLY THOSE DOCUMENTS
 
 1. A clear thesis statement focusing on how each of the texts given explore the central user prompt: {USER_PROMPT}
 2. Three body paragraphs (each referencing key points and specific citations from the texts).
@@ -35,6 +35,11 @@ Based on the above:
 - Return ONLY a structured outline for the essay (not the full prose).
 - Make sure each paragraph has a topic sentence and bullet points indicating which novel passages you plan to cite.
 - Conclude with a brief summary line that restates the thesis.
+
+
+MAKE SURE TO CITE SOURCES (ex. [XYZ book chunk A] --> XYZ book chunk A and WRITE the full chunk/excerpt used in citation section)
+
+Write the chunks you used in your answer
 
 Please respond with your outline in a clearly organized format (e.g., bullet points or headings).
 """
@@ -78,7 +83,7 @@ You are an AI assistant tasked with composing a final 5-paragraph book report ba
 
 The documents you will be analyzing are {FILENAMES}
 
-USE ONLY THOSE DOCUMENTS
+USE ALL and ONLY THOSE DOCUMENTS
 
 1. The user prompt:
 ----------------------------------------------------------------
@@ -100,10 +105,6 @@ USE ONLY THOSE DOCUMENTS
 {MORE_CONTEXT}
 ----------------------------------------------------------------
 
-5. Some other analysis/brainstorming you have done:
-----------------------------------------------------------------
-{CONTEXT_RESPONSE}
-----------------------------------------------------------------
 
 INSTRUCTIONS:
 - Write a cohesive, well-structured 5-paragraph essay that adheres to the structure.
@@ -114,7 +115,9 @@ INSTRUCTIONS:
 - Maintain clarity, coherence, and strong transitions between paragraphs. Be emotive, emotional, and insightful. Create a genuine, convincing analysis.
 
 
-MAKE SURE TO CITE SOURCES (ex. [1] --> XYZ book chunk A)
+MAKE SURE TO CITE SOURCES (ex. [XYZ book chunk A] --> XYZ book chunk A and WRITE the full chunk/excerpt used in citation section)
+
+Write the chunks you used in your answer
 
 Deliver a single, continuous text output of exactly five paragraphs. No additional formatting or commentary should be included outside of these paragraphs. MAKE SURE YOU INCLUDE CITATIONS of WORKS AND CHUNKS
 """
