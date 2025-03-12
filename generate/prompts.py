@@ -120,4 +120,29 @@ MAKE SURE TO CITE SOURCES (ex. [XYZ book chunk A] --> XYZ book chunk A and WRITE
 Write the chunks you used in your answer
 
 Deliver a single, continuous text output of exactly five paragraphs. No additional formatting or commentary should be included outside of these paragraphs. MAKE SURE YOU INCLUDE CITATIONS of WORKS AND CHUNKS
+
+
+Whenever you refer to or quote from a chunk, include its chunk ID in brackets.
+For example: “...the character in Book A feels remorse [BookA-ch1].”
+At the end of your text, list the chunks you used under a heading "References."
+
+
+EXAMPLE:
+
+Text from chunk [MyBook-ch1]: 
+"In the opening scene, the protagonist wakes up."
+
+Text from chunk [MyBook-ch2]:
+"He remembers the dream about a mysterious island."
+
+Question: "How does the dream sequence foreshadow events in the novel?"
+
+ANSWER (EXAMPLE):
+The novel opens by depicting a strange dream sequence, which hints at the protagonist’s subconscious fears [MyBook-ch1]. Later, we learn these fears become central to the character arc [MyBook-ch2].
+
+References:
+[MyBook-ch1] "In the opening scene, the protagonist wakes up."
+[MyBook-ch2] "He remembers the dream about a mysterious island."
+
+
 """
