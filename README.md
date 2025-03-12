@@ -1,6 +1,6 @@
 # Document Processing and AI Query System
 
-A system for ingesting various document formats (PDF, EPUB, DOCX, TXT, XML), storing them in a vector database (ChromaDB), and performing queries or generating responses using the stored knowledge.
+A system for ingesting various document formats (PDF, EPUB, DOCX, TXT, XML), storing them in a vector database (ChromaDB), and performing queries or generating responses using the stored knowledge. Using Deepseek-r1 8B under the hood w/ Ollama.
 
 ## Installation
 
