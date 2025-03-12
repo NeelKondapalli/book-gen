@@ -20,16 +20,18 @@ pip install pipenv
 pipenv install
 ```
 
-## Required Dependencies
+You will need to have Ollama installed to use this application The system uses the DeepSeek-R1 8B model through Ollama for text generation. This models rivals OpenAI's o1 models on a variety of benchmarks.
 
-- Python 3.8+
-- ChromaDB
-- LangChain
-- BeautifulSoup4
-- lxml (for XML processing)
-- PyPDF2 (for PDF processing)
-- python-docx (for DOCX processing)
-- ebooklib (for EPUB processing)
+## LLM Setup
+
+To setup Ollama:
+
+1. Install Ollama from [ollama.com](https://ollama.com/)
+
+2. Pull the DeepSeek-R1 8B model:
+```bash
+ollama run deepseek-r1:8b
+```
 
 ## Usage
 
