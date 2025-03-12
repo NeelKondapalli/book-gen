@@ -11,6 +11,7 @@ python-docx = "*"
 tqdm = "*"
 langchain = "*"
 beautifulsoup4 = "*"
+ollama = "*"
 
 [dev-packages]
 

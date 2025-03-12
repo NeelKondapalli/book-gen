@@ -26,3 +26,14 @@ def extract_text_from_docx(filepath: str) -> str:
     """Extract text from a DOCX file."""
     doc = Document(filepath)
     return "\n".join([paragraph.text for paragraph in doc.paragraphs])
+
+def convert_rag_to_string(context_dict: dict) -> str:
+    all_ids = context_dict["ids"][0]
+    all_docs = context_dict["documents"][0]
+    
+    context_string = ""
+    for idx, chunk_doc in zip(all_ids, all_docs):
+        formatted = f"---\nChunk ID: {idx}\nChunk Text:\n{chunk_doc}\n"
+        context_string += formatted
+
+    return context_string

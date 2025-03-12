@@ -1,5 +1,6 @@
 import argparse
-from modules.ingestion import Ingestor
+from ingest.ingestion import Ingestor
+from generate.generation import Generator
 import chromadb
 
 def ingest(dir_path, name):
@@ -18,12 +19,22 @@ def test_query(name, query):
     
     results = collection.query(
         query_texts=[query],
-        n_results=7 
+        n_results=7,
+        include = ["documents"]
     )
 
     print("\n\n")
     print(results)
     print("\n\n")
+
+def generate(prompt, name):
+    client = chromadb.PersistentClient()
+    try:
+        collection = client.get_collection(name=name)
+    except:
+        raise Exception(f"Collection of name {name} does not exist")
+    generator = Generator(prompt, name)
+    generator.generate()
 
 
 
@@ -59,6 +70,18 @@ def main():
         help="Document query"
     )
 
+    process_parser = subparsers.add_parser("generate", help="Test a query on Chroma")
+    process_parser.add_argument(
+        "--name",
+        required=True,
+        help="Document collection name."
+    )
+    process_parser.add_argument(
+        "--prompt",
+        required=True,
+        help="Prompt for generation."
+    )
+
 
     args = parser.parse_args()
 
@@ -72,6 +95,9 @@ def main():
 
     if args.command == "test_query":
         test_query(args.name, args.query)
+    
+    if args.command == "generate":
+        generate(args.prompt, args.name)
 
 
 if __name__ == "__main__":
