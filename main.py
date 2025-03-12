@@ -22,7 +22,9 @@ def test_query(name, query):
         include = ["documents"]
     )
 
-    print("\n\n" + results + "\n\n")
+    print("\n\n")
+    print(results)
+    print("\n\n")
 
 def generate(prompt, name):
     client = chromadb.PersistentClient()
